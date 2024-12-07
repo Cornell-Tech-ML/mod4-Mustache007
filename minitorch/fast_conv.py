@@ -91,7 +91,26 @@ def _tensor_conv1d(
     s2 = weight_strides
 
     # TODO: Implement for Task 4.1.
-    raise NotImplementedError("Need to implement for Task 4.1")
+    # Loop batches
+    for batch_idx in prange(batch):
+        # Loop output channels
+        for out_channel in prange(out_channels):
+            # Loop width positions
+            for out_pos_w in prange(out_width):
+                # Sum for convolution
+                conv_sum = 0.0
+                # Loop input channels
+                for in_channel in prange(in_channels):
+                    # Loop kernel
+                    for kernel_pos in range(kw):
+                        input_w = out_pos_w + kernel_pos if not reverse else out_pos_w - kernel_pos
+                        if 0 <= input_w < width:
+                            input_idx = batch_idx * s1[0] + in_channel * s1[1] + input_w * s1[2]
+                            weight_idx = out_channel * s2[0] + in_channel * s2[1] + kernel_pos * s2[2]
+                            conv_sum += input[input_idx] * weight[weight_idx]
+                # Store result
+                output_idx = batch_idx * out_strides[0] + out_channel * out_strides[1] + out_pos_w * out_strides[2]
+                out[output_idx] = conv_sum
 
 
 tensor_conv1d = njit(_tensor_conv1d, parallel=True)
@@ -218,9 +237,30 @@ def _tensor_conv2d(
     # inners
     s10, s11, s12, s13 = s1[0], s1[1], s1[2], s1[3]
     s20, s21, s22, s23 = s2[0], s2[1], s2[2], s2[3]
-
     # TODO: Implement for Task 4.2.
-    raise NotImplementedError("Need to implement for Task 4.2")
+    # Loop batches
+    for batch_idx in prange(batch):
+        # Loop output channels
+        for out_channel in prange(out_channels):
+            # Loop height positions
+            for out_pos_h in prange(out_shape[2]):
+                # Loop width positions
+                for out_pos_w in prange(out_shape[3]):
+                    # Sum for convolution
+                    conv_sum = 0.0
+                    # Loop input channels
+                    for in_channel in prange(in_channels):
+                        for kernel_h in range(kh):
+                            for kernel_w in range(kw):
+                                input_h = out_pos_h - kernel_h if reverse else out_pos_h + kernel_h
+                                input_w = out_pos_w - kernel_w if reverse else out_pos_w + kernel_w
+                                if 0 <= input_h < height and 0 <= input_w < width:
+                                    input_idx = batch_idx * s10 + in_channel * s11 + input_h * s12 + input_w * s13
+                                    weight_idx = out_channel * s20 + in_channel * s21 + kernel_h * s22 + kernel_w * s23
+                                    conv_sum += input[input_idx] * weight[weight_idx]
+                    # Store result
+                    output_idx = batch_idx * out_strides[0] + out_channel * out_strides[1] + out_pos_h * out_strides[2] + out_pos_w * out_strides[3]
+                    out[output_idx] = conv_sum
 
 
 tensor_conv2d = njit(_tensor_conv2d, parallel=True, fastmath=True)
