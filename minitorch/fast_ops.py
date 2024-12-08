@@ -19,7 +19,12 @@ if TYPE_CHECKING:
     from typing import Callable, Optional
 
     from .tensor import Tensor
-    from .tensor_data import Index, Shape, Storage, Strides  # Index is not used so deleted
+    from .tensor_data import (
+        Index,
+        Shape,
+        Storage,
+        Strides,
+    )  # Index is not used so deleted
 
 # TIP: Use `NUMBA_DISABLE_JIT=1 pytest tests/ -m task3_1` to run these tests without JIT.
 
@@ -252,7 +257,6 @@ def tensor_zip(
                 out[i] = fn(a_storage[i], b_storage[i])
         # END ASSIGN3.1
 
-
     return njit(_zip, parallel=True)  # type: ignore
 
 
@@ -301,7 +305,6 @@ def tensor_reduce(
                 j += step
             out[o] = accum
         # END ASSIGN3.1
-
 
     return njit(_reduce, parallel=True)  # type: ignore
 

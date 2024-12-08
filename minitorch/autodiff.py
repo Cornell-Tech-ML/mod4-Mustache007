@@ -97,7 +97,7 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
 
     """
     # TODO: Implement for Task 1.4.
-    #ASSIGNMENT 1.4
+    # ASSIGNMENT 1.4
     order: List[Variable] = []
     seen = set()
 
@@ -113,7 +113,7 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
 
     visit(variable)
     return order
-    #END ASSIGNMENT 1.4
+    # END ASSIGNMENT 1.4
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:

@@ -67,7 +67,7 @@ class CNNSentimentKim(minitorch.Module):
         self.layer3 = Conv1d(embedding_size, feature_map_size, filter_sizes[2])
         self.linear_layer = Linear(feature_map_size, 1)
         self.dropout = dropout
-        
+
     def forward(self, embeddings):
         """
         embeddings tensor: [batch x sentence length x embedding dim]
@@ -78,7 +78,7 @@ class CNNSentimentKim(minitorch.Module):
         c1 = self.layer1.forward(embeddings).relu()
         c2 = self.layer2.forward(embeddings).relu()
         c3 = self.layer3.forward(embeddings).relu()
-    
+
         m1 = minitorch.nn.max(c1, 2)
         m2 = minitorch.nn.max(c2, 2)
         m3 = minitorch.nn.max(c3, 2)
@@ -86,7 +86,7 @@ class CNNSentimentKim(minitorch.Module):
         # Reshape and apply final linear layer
         reshaped = max_over_time.view(max_over_time.shape[0], max_over_time.shape[1])
         h = self.linear_layer.forward(reshaped)
-        
+
         # Apply dropout and sigmoid activation
         h = minitorch.nn.dropout(h, self.dropout, not self.training)
         return h.sigmoid().view(embeddings.shape[0])

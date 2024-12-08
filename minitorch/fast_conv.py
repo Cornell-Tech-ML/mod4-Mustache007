@@ -6,7 +6,6 @@ from numba import njit as _njit
 from .autodiff import Context
 from .tensor import Tensor
 from .tensor_data import (
-
     Shape,
     Strides,
     Storage,
@@ -102,13 +101,27 @@ def _tensor_conv1d(
                 for in_channel in prange(in_channels):
                     # Loop kernel
                     for kernel_pos in range(kw):
-                        input_w = out_pos_w + kernel_pos if not reverse else out_pos_w - kernel_pos
+                        input_w = (
+                            out_pos_w + kernel_pos
+                            if not reverse
+                            else out_pos_w - kernel_pos
+                        )
                         if 0 <= input_w < width:
-                            input_idx = batch_idx * s1[0] + in_channel * s1[1] + input_w * s1[2]
-                            weight_idx = out_channel * s2[0] + in_channel * s2[1] + kernel_pos * s2[2]
+                            input_idx = (
+                                batch_idx * s1[0] + in_channel * s1[1] + input_w * s1[2]
+                            )
+                            weight_idx = (
+                                out_channel * s2[0]
+                                + in_channel * s2[1]
+                                + kernel_pos * s2[2]
+                            )
                             conv_sum += input[input_idx] * weight[weight_idx]
                 # Store result
-                output_idx = batch_idx * out_strides[0] + out_channel * out_strides[1] + out_pos_w * out_strides[2]
+                output_idx = (
+                    batch_idx * out_strides[0]
+                    + out_channel * out_strides[1]
+                    + out_pos_w * out_strides[2]
+                )
                 out[output_idx] = conv_sum
 
 
@@ -252,14 +265,37 @@ def _tensor_conv2d(
                     for in_channel in prange(in_channels):
                         for kernel_h in range(kh):
                             for kernel_w in range(kw):
-                                input_h = out_pos_h - kernel_h if reverse else out_pos_h + kernel_h
-                                input_w = out_pos_w - kernel_w if reverse else out_pos_w + kernel_w
+                                input_h = (
+                                    out_pos_h - kernel_h
+                                    if reverse
+                                    else out_pos_h + kernel_h
+                                )
+                                input_w = (
+                                    out_pos_w - kernel_w
+                                    if reverse
+                                    else out_pos_w + kernel_w
+                                )
                                 if 0 <= input_h < height and 0 <= input_w < width:
-                                    input_idx = batch_idx * s10 + in_channel * s11 + input_h * s12 + input_w * s13
-                                    weight_idx = out_channel * s20 + in_channel * s21 + kernel_h * s22 + kernel_w * s23
+                                    input_idx = (
+                                        batch_idx * s10
+                                        + in_channel * s11
+                                        + input_h * s12
+                                        + input_w * s13
+                                    )
+                                    weight_idx = (
+                                        out_channel * s20
+                                        + in_channel * s21
+                                        + kernel_h * s22
+                                        + kernel_w * s23
+                                    )
                                     conv_sum += input[input_idx] * weight[weight_idx]
                     # Store result
-                    output_idx = batch_idx * out_strides[0] + out_channel * out_strides[1] + out_pos_h * out_strides[2] + out_pos_w * out_strides[3]
+                    output_idx = (
+                        batch_idx * out_strides[0]
+                        + out_channel * out_strides[1]
+                        + out_pos_h * out_strides[2]
+                        + out_pos_w * out_strides[3]
+                    )
                     out[output_idx] = conv_sum
 
 

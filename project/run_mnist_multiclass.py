@@ -82,7 +82,7 @@ class Network(minitorch.Module):
         layer2_output = self.layer2.forward(layer1_output).relu()
         self.out = layer2_output
         # Max pooling and reshape
-        pooled_output = minitorch.nn.maxpool2d(layer2_output, (4, 4))      
+        pooled_output = minitorch.nn.maxpool2d(layer2_output, (4, 4))
         reshaped_output = pooled_output.view(BATCH, 392)
         # First linear layer with ReLU and dropout
         layer3_output = self.layer3.forward(reshaped_output).relu()
