@@ -76,16 +76,17 @@ class Network(minitorch.Module):
     def forward(self, x):
         # TODO: Implement for Task 4.5.
         # First conv layer with ReLU
-        self.mid = self.layer1.forward(x).relu()
+        layer1_output = self.layer1.forward(x).relu()
+        self.mid = layer1_output
         # Second conv layer with ReLU
-        self.out = self.layer2.forward(self.mid).relu()
+        layer2_output = self.layer2.forward(layer1_output).relu()
+        self.out = layer2_output
         # Max pooling and reshape
-        pooled_output = minitorch.nn.maxpool2d(self.out, (4, 4))      
+        pooled_output = minitorch.nn.maxpool2d(layer2_output, (4, 4))      
         reshaped_output = pooled_output.view(BATCH, 392)
         # First linear layer with ReLU and dropout
-        
-        linear1_output = self.layer3.forward(reshaped_output).relu()
-        dropout_output = minitorch.nn.dropout(self.linear1_output, 0.25, not self.training)
+        layer3_output = self.layer3.forward(reshaped_output).relu()
+        dropout_output = minitorch.nn.dropout(layer3_output, 0.25, not self.training)
         # Final linear layer and logsoftmax
         final_output = self.layer4.forward(dropout_output)
         return minitorch.nn.logsoftmax(final_output, dim=1)

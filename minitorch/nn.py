@@ -113,13 +113,17 @@ def max(input_tensor: Tensor, dimension: int) -> Tensor:
 
 def softmax(input: Tensor, dim: int) -> Tensor:
     """Apply softmax along specified dimension."""
-    exp_values = input.exp()
-    return exp_values / exp_values.sum(dim=dim)
+    max_values = max(input, dim)
+    shifted_input = input - max_values
+    exp_values = shifted_input.exp()
+    return exp_values / exp_values.sum(dim)
 
 
 def logsoftmax(input: Tensor, dim: int) -> Tensor:
     """Compute log softmax along dimension."""
-    return softmax(input, dim).log()
+    max_values = max(input, dim)
+    shifted_input = input - max_values
+    return input - (max_values + shifted_input.exp().sum(dim=dim).log())
 
 
 def maxpool2d(input_tensor: Tensor, kernel: Tuple[int, int]) -> Tensor:

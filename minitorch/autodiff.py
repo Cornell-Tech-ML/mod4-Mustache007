@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Tuple, Protocol
+from typing import Any, Iterable, List, Tuple, Protocol
 
 
 # ## Task 1.1
@@ -97,30 +97,23 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
 
     """
     # TODO: Implement for Task 1.4.
-    visited = set()
-    order = []
+    #ASSIGNMENT 1.4
+    order: List[Variable] = []
+    seen = set()
 
-    def dfs(v: Variable) -> None:
-        """Performs a depth-first search on the computation graph.
-
-        Args:
-        ----
-            v (Variable): The current variable being processed.
-
-        Returns:
-        -------
-            None
-
-        """
-        if v.unique_id in visited or v.is_constant():
+    def visit(var: Variable) -> None:
+        if var.unique_id in seen or var.is_constant():
             return
-        visited.add(v.unique_id)
-        for parent in v.parents:
-            dfs(parent)
-        order.append(v)
+        if not var.is_leaf():
+            for parent in var.parents:
+                if not parent.is_constant():
+                    visit(parent)
+        seen.add(var.unique_id)
+        order.insert(0, var)
 
-    dfs(variable)
-    return reversed(order)
+    visit(variable)
+    return order
+    #END ASSIGNMENT 1.4
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -143,10 +136,10 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
         else:
             d = derivatives[var.unique_id]
             for parent, d_input in var.chain_rule(d):
-                if parent.unique_id in derivatives:
-                    derivatives[parent.unique_id] += d_input
-                else:
-                    derivatives[parent.unique_id] = d_input
+                if parent.is_constant():
+                    continue
+                derivatives.setdefault(parent.unique_id, 0)
+                derivatives[parent.unique_id] += d_input
 
 
 @dataclass
