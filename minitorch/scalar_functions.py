@@ -38,6 +38,17 @@ class ScalarFunction:
 
     @classmethod
     def apply(cls, *vals: ScalarLike) -> Scalar:
+        """Applies the scalar function to the given values.
+
+        Args:
+        ----
+            *vals (ScalarLike): Variable number of scalar-like inputs.
+
+        Returns:
+        -------
+            Scalar: A new Scalar object with the result of the function application.
+
+        """
         raw_vals = []
         scalars = []
         for v in vals:
@@ -66,11 +77,36 @@ class Add(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
-        return a + b
+        """Computes the forward pass of the addition function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            a (float): The first input.
+            b (float): The second input.
+
+        Returns:
+        -------
+            float: The result of a + b.
+
+        """
+        return float(operators.add(a, b))
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
-        return d_output, d_output
+        """Computes the backward pass of the addition function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            Tuple[float, float]: The gradients with respect to inputs a and b.
+
+        """
+        return float(d_output), float(d_output)
 
 
 class Log(ScalarFunction):
@@ -78,15 +114,340 @@ class Log(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
+        """Computes the forward pass of the natural logarithm function.
+
+        Args:
+        ----
+            ctx (Context): The context object to save values for backward pass.
+            a (float): The input value.
+
+        Returns:
+        -------
+            float: The natural logarithm of a.
+
+        """
         ctx.save_for_backward(a)
-        return operators.log(a)
+        return float(operators.log(a))
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
+        """Computes the backward pass of the natural logarithm function.
+
+        Args:
+        ----
+            ctx (Context): The context object containing saved values from forward pass.
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            float: The gradient with respect to the input.
+
+        """
         (a,) = ctx.saved_values
-        return operators.log_back(a, d_output)
+        return float(operators.log_back(a, d_output))
 
 
-# To implement.
+# TODO: Implement for Task 1.2.
 
 
+class Mul(ScalarFunction):
+    """Multiplication function $f(x, y) = x * y$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        """Computes the forward pass of the multiplication function.
+
+        Args:
+        ----
+            ctx (Context): The context object to save values for backward pass.
+            a (float): The first input.
+            b (float): The second input.
+
+        Returns:
+        -------
+            float: The result of a * b.
+
+        """
+        ctx.save_for_backward(a, b)
+        return float(operators.mul(a, b))
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        """Computes the backward pass of the multiplication function.
+
+        Args:
+        ----
+            ctx (Context): The context object containing saved values from forward pass.
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            Tuple[float, float]: The gradients with respect to inputs a and b.
+
+        """
+        a, b = ctx.saved_values
+        return float(b * d_output), float(a * d_output)
+
+
+class Inv(ScalarFunction):
+    """Inverse function $f(x) = 1/x$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        """Computes the forward pass of the inverse function.
+
+        Args:
+        ----
+            ctx (Context): The context object to save values for backward pass.
+            a (float): The input value.
+
+        Returns:
+        -------
+            float: The result of 1/a.
+
+        """
+        ctx.save_for_backward(a)
+        return float(operators.inv(a))
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        """Computes the backward pass of the inverse function.
+
+        Args:
+        ----
+            ctx (Context): The context object containing saved values from forward pass.
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            float: The gradient with respect to the input.
+
+        """
+        (a,) = ctx.saved_values
+        return float(operators.inv_back(a, d_output))
+
+
+class Neg(ScalarFunction):
+    """Negation function $f(x) = -x$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        """Computes the forward pass of the negation function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            a (float): The input value.
+
+        Returns:
+        -------
+            float: The negation of a.
+
+        """
+        return float(operators.neg(a))
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        """Computes the backward pass of the negation function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            float: The gradient with respect to the input.
+
+        """
+        return float(-d_output)
+
+
+class Sigmoid(ScalarFunction):
+    """Sigmoid function $f(x) = 1 / (1 + e^{-x})$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        """Computes the forward pass of the sigmoid function.
+
+        Args:
+        ----
+            ctx (Context): The context object to save values for backward pass.
+            a (float): The input value.
+
+        Returns:
+        -------
+            float: The sigmoid of a.
+
+        """
+        sigmoid_value = float(operators.sigmoid(a))
+        ctx.save_for_backward(sigmoid_value)
+        return float(sigmoid_value)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        """Computes the backward pass of the sigmoid function.
+
+        Args:
+        ----
+            ctx (Context): The context object containing saved values from forward pass.
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            float: The gradient with respect to the input.
+
+        """
+        (sigmoid_value,) = ctx.saved_values
+        return float(sigmoid_value * (1 - sigmoid_value) * d_output)
+
+
+class ReLU(ScalarFunction):
+    """ReLU function $f(x) = max(0, x)$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        """Computes the forward pass of the ReLU function.
+
+        Args:
+        ----
+            ctx (Context): The context object to save values for backward pass.
+            a (float): The input value.
+
+        Returns:
+        -------
+            float: The ReLU of a.
+
+        """
+        ctx.save_for_backward(a)
+        return float(operators.relu(a))
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        """Computes the backward pass of the ReLU function.
+
+        Args:
+        ----
+            ctx (Context): The context object containing saved values from forward pass.
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            float: The gradient with respect to the input.
+
+        """
+        (a,) = ctx.saved_values
+        return float(operators.relu_back(a, d_output))
+
+
+class Exp(ScalarFunction):
+    """Exponential function $f(x) = e^x$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        """Computes the forward pass of the exponential function.
+
+        Args:
+        ----
+            ctx (Context): The context object to save values for backward pass.
+            a (float): The input value.
+
+        Returns:
+        -------
+            float: The exponential of a.
+
+        """
+        exp_value = float(operators.exp(a))
+        ctx.save_for_backward(exp_value)
+        return float(exp_value)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        """Computes the backward pass of the exponential function.
+
+        Args:
+        ----
+            ctx (Context): The context object containing saved values from forward pass.
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            float: The gradient with respect to the input.
+
+        """
+        (exp_value,) = ctx.saved_values
+        return float(exp_value * d_output)
+
+
+class LT(ScalarFunction):
+    """Less-than function $f(x) = 1.0 if x < y else 0.0$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        """Computes the forward pass of the less-than function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            a (float): The first input.
+            b (float): The second input.
+
+        Returns:
+        -------
+            float: 1.0 if a < b, else 0.0.
+
+        """
+        return float(operators.lt(a, b))
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        """Computes the backward pass of the less-than function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            Tuple[float, float]: The gradients with respect to inputs a and b (always 0.0).
+
+        """
+        return 0.0, 0.0
+
+
+class EQ(ScalarFunction):
+    """Equal function $f(x) = 1.0 if x == y else 0.0$"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        """Computes the forward pass of the equality function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            a (float): The first input.
+            b (float): The second input.
+
+        Returns:
+        -------
+            float: 1.0 if a == b, else 0.0.
+
+        """
+        return float(operators.eq(a, b))
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        """Computes the backward pass of the equality function.
+
+        Args:
+        ----
+            ctx (Context): The context object (unused in this case).
+            d_output (float): The gradient of the loss with respect to the output.
+
+        Returns:
+        -------
+            Tuple[float, float]: The gradients with respect to inputs a and b (always 0.0).
+
+        """
+        return 0.0, 0.0

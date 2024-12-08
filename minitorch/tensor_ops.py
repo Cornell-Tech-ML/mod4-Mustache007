@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Type
+from typing import TYPE_CHECKING, Callable, Optional, Type, Any
 
 import numpy as np
 from typing_extensions import Protocol
@@ -41,7 +41,21 @@ class TensorOps:
     @staticmethod
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
-    ) -> Callable[[Tensor, int], Tensor]: ...
+    ) -> Callable[[Tensor, int], Tensor]:
+        """Creates a reduction function for a tensor.
+
+        Args:
+        ----
+            fn (Callable[[float, float], float]): The reduction function to apply.
+            start (float, optional): The initial value for the reduction. Defaults to 0.0.
+
+        Returns:
+        -------
+            Callable[[Tensor, int], Tensor]: A function that takes a tensor and a dimension
+            to reduce over, and returns a new tensor with the reduction applied.
+
+        """
+        ...
 
     @staticmethod
     def matrix_multiply(a: Tensor, b: Tensor) -> Tensor:
@@ -57,10 +71,12 @@ class TensorBackend:
         that implements map, zip, and reduce higher-order functions.
 
         Args:
+        ----
             ops : tensor operations object see `tensor_ops.py`
 
 
         Returns:
+        -------
             A collection of tensor functions
 
         """
@@ -112,12 +128,14 @@ class SimpleOps(TensorOps):
                     out[i, j] = fn(a[i, 0])
 
         Args:
+        ----
             fn: function from float-to-float to apply.
             a (:class:`TensorData`): tensor to map over
             out (:class:`TensorData`): optional, tensor data to fill in,
                    should broadcast with `a`
 
         Returns:
+        -------
             new tensor data
 
         """
@@ -154,11 +172,13 @@ class SimpleOps(TensorOps):
 
 
         Args:
+        ----
             fn: function from two floats-to-float to apply
             a (:class:`TensorData`): tensor to zip over
             b (:class:`TensorData`): tensor to zip over
 
         Returns:
+        -------
             :class:`TensorData` : new tensor data
 
         """
@@ -179,26 +199,19 @@ class SimpleOps(TensorOps):
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[["Tensor", int], "Tensor"]:
-        """Higher-order tensor reduce function. ::
+        """Higher-order tensor reduce function.
 
-          fn_reduce = reduce(fn)
-          out = fn_reduce(a, dim)
-
-        Simple version ::
-
-            for j:
-                out[1, j] = start
-                for i:
-                    out[1, j] = fn(out[1, j], a[i, j])
-
+        This function creates a reduction function for a tensor.
 
         Args:
-            fn: function from two floats-to-float to apply
-            a (:class:`TensorData`): tensor to reduce over
-            dim (int): int of dim to reduce
+        ----
+            fn (Callable[[float, float], float]): The reduction function to apply.
+            start (float, optional): The initial value for the reduction. Defaults to 0.0.
 
         Returns:
-            :class:`TensorData` : new tensor
+        -------
+            Callable[["Tensor", int], "Tensor"]: A function that takes a tensor and a dimension
+            to reduce over, and returns a new tensor with the reduction applied.
 
         """
         f = tensor_reduce(fn)
@@ -227,29 +240,20 @@ class SimpleOps(TensorOps):
 # Implementations.
 
 
-def tensor_map(
-    fn: Callable[[float], float],
-) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides], None]:
-    """Low-level implementation of tensor map between
-    tensors with *possibly different strides*.
+def tensor_map(fn: Callable[[float], float]) -> Any:
+    """Low-level implementation of tensor map between tensors with *possibly different strides*.
 
-    Simple version:
-
-    * Fill in the `out` array by applying `fn` to each
-      value of `in_storage` assuming `out_shape` and `in_shape`
-      are the same size.
-
-    Broadcasted version:
-
-    * Fill in the `out` array by applying `fn` to each
-      value of `in_storage` assuming `out_shape` and `in_shape`
-      broadcast. (`in_shape` must be smaller than `out_shape`).
+    This function creates a mapping function that applies a float-to-float function to each element
+    of a tensor, handling broadcasting between tensors of different shapes.
 
     Args:
-        fn: function from float-to-float to apply
+    ----
+        fn: Function that takes a float and returns a float to apply to each element
 
     Returns:
-        Tensor map function.
+    -------
+        A function that takes output and input tensor storage/metadata and applies the mapping,
+        handling broadcasting and different stride patterns.
 
     """
 
@@ -261,18 +265,21 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 2.3.
+        out_index: Index = np.zeros(MAX_DIMS, np.int32)
+        in_index: Index = np.zeros(MAX_DIMS, np.int32)
+        for i in range(len(out)):
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            o = index_to_position(out_index, out_strides)
+            j = index_to_position(in_index, in_strides)
+            out[o] = fn(in_storage[j])
 
     return _map
 
 
-def tensor_zip(
-    fn: Callable[[float, float], float],
-) -> Callable[
-    [Storage, Shape, Strides, Storage, Shape, Strides, Storage, Shape, Strides], None
-]:
-    """Low-level implementation of tensor zip between
-    tensors with *possibly different strides*.
+def tensor_zip(fn: Callable[[float, float], float]) -> Any:
+    """Low-level implementation of tensor zip between tensors with *possibly different strides*.
 
     Simple version:
 
@@ -287,9 +294,11 @@ def tensor_zip(
       and `b_shape` broadcast to `out_shape`.
 
     Args:
+    ----
         fn: function mapping two floats to float to apply
 
     Returns:
+    -------
         Tensor zip function.
 
     """
@@ -305,24 +314,41 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 2.3.
+        out_index: Index = np.zeros(MAX_DIMS, np.int32)
+        a_index: Index = np.zeros(MAX_DIMS, np.int32)
+        b_index: Index = np.zeros(MAX_DIMS, np.int32)
+        for i in range(len(out)):
+            to_index(i, out_shape, out_index)
+            o = index_to_position(out_index, out_strides)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            j = index_to_position(a_index, a_strides)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+            k = index_to_position(b_index, b_strides)
+            out[o] = fn(a_storage[j], b_storage[k])
 
     return _zip
 
 
-def tensor_reduce(
-    fn: Callable[[float, float], float],
-) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides, int], None]:
-    """Low-level implementation of tensor reduce.
+def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
+    """Low-level implementation of tensor reduction operation.
 
-    * `out_shape` will be the same as `a_shape`
-       except with `reduce_dim` turned to size `1`
+    This function creates a reduction function that applies a binary operation
+    repeatedly along a specified dimension of a tensor. The output shape will be
+    the same as the input shape except the reduced dimension will have size 1.
+
+    For example, if we reduce dimension 1 of shape (2,3,4), the output shape
+    will be (2,1,4).
 
     Args:
-        fn: reduction function mapping two floats to float
+    ----
+        fn: Binary function (float, float) -> float that will be applied
+            repeatedly to reduce values along the specified dimension
 
     Returns:
-        Tensor reduce function.
+    -------
+        A function that takes output/input tensor storage and metadata and performs
+        the reduction operation along the specified dimension
 
     """
 
@@ -335,7 +361,16 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 2.3.
+        out_index: Index = np.zeros(MAX_DIMS, np.int32)
+        reduce_size = a_shape[reduce_dim]
+        for i in range(len(out)):
+            to_index(i, out_shape, out_index)
+            o = index_to_position(out_index, out_strides)
+            for s in range(reduce_size):
+                out_index[reduce_dim] = s
+                j = index_to_position(out_index, a_strides)
+                out[o] = fn(out[o], a_storage[j])
 
     return _reduce
 
