@@ -42,7 +42,7 @@ class Conv2d(minitorch.Module):
 
     def forward(self, input):
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        return minitorch.conv2d(input, self.weights.value) + self.bias.value
 
 
 class Network(minitorch.Module):
@@ -68,11 +68,28 @@ class Network(minitorch.Module):
         self.out = None
 
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        self.layer1 = Conv2d(1, 4, 3, 3)
+        self.layer2 = Conv2d(4, 8, 3, 3)
+        self.layer3 = Linear(392, 64)
+        self.layer4 = Linear(64, C)
 
     def forward(self, x):
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        # First conv layer with ReLU
+        layer1_output = self.layer1.forward(x).relu()
+        self.mid = layer1_output
+        # Second conv layer with ReLU
+        layer2_output = self.layer2.forward(layer1_output).relu()
+        self.out = layer2_output
+        # Max pooling and reshape
+        pooled_output = minitorch.nn.maxpool2d(layer2_output, (4, 4))
+        reshaped_output = pooled_output.view(BATCH, 392)
+        # First linear layer with ReLU and dropout
+        layer3_output = self.layer3.forward(reshaped_output).relu()
+        dropout_output = minitorch.nn.dropout(layer3_output, 0.25, not self.training)
+        # Final linear layer and logsoftmax
+        final_output = self.layer4.forward(dropout_output)
+        return minitorch.nn.logsoftmax(final_output, dim=1)
 
 
 def make_mnist(start, stop):
